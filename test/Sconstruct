@@ -7,7 +7,6 @@ testenv.Append(LIBPATH = '/usr/local/lib/')
 
 test_sources = Split("""
 ../datastructures/hashmap.c
-datastructures/test-datastructures.c
 main.c
 """)
 

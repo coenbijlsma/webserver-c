@@ -9,13 +9,33 @@ START_TEST(test_fnv1a_hash)
 }
 END_TEST
 
+START_TEST(test_hashmap_create)
+{
+    hashmap* map = hashmap_create();
+    ck_assert(map != (hashmap*)0);
+    ck_assert(map->slot != (hashmap_slot*)0);
+    ck_assert(map->slot->bucket != (hashmap_bucket*)0);
+
+    // assume this works, is tested in another test
+    hashmap_destroy(map);
+}
+END_TEST
+
+START_TEST(test_hashmap_destroy)
+{
+    hashmap* map = hashmap_create();
+    hashmap_destroy(map); // should not throw anything
+}
+END_TEST
 
 Suite* ds_suite(void) 
 {
-    Suite* s = suite_create("ds");
+    Suite* s = suite_create("test-datastructures");
 
     TCase* tc_core = tcase_create("core");
     tcase_add_test(tc_core, test_fnv1a_hash);
+    tcase_add_test(tc_core, test_hashmap_create);
+    tcase_add_test(tc_core, test_hashmap_destroy);
     suite_add_tcase(s, tc_core);
 
     return s;
