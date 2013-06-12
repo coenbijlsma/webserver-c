@@ -1,0 +1,14 @@
+env = Environment()
+
+env.Append(CPPPATH = ['./include/'])
+env.Append(CCFLAGS = ['-Wall', '-g', '-O3', '-std=gnu99'])
+
+sources = Split("""
+main.c
+log/cws_log.c
+net/inet.c
+datastructures/hashmap.c
+""")
+
+env.Program(target = 'cws', source = sources)
+

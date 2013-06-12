@@ -1,0 +1,17 @@
+testenv = Environment()
+
+testenv.Append(CPPPATH = ['../include/'])
+testenv.Append(CCFLAGS = ['-Wall', '-g', '-O3', '-std=gnu99'])
+testenv.Append(LIBS = ['check'])
+testenv.Append(LIBPATH = '/usr/local/lib/')
+
+test_sources = Split("""
+../datastructures/hashmap.c
+datastructures/test-datastructures.c
+main.c
+""")
+
+test_obj = testenv.Object(source = test_sources)
+
+testenv.Program(target = 'cws-test', source = test_obj)
+
