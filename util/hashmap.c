@@ -4,7 +4,8 @@
 #include <string.h> // memset, string fnc
 #include <limits.h>
 
-#include "datastructures/hashmap.h"
+#include "util/stringutil.h"
+#include "util/hashmap.h"
 
 #define FNV_PRIME 2147483647
 #define SEED 31
@@ -21,6 +22,7 @@ static hashmap_slot* hashmap_slot_create(void);
 static hashmap_bucket* hashmap_bucket_create(void);
 static void hashmap_slots_destroy(hashmap_slot* slot);
 static void hashmap_buckets_destroy(hashmap_bucket* bucket);
+static void hashmap_bucket_destroy(hashmap_bucket* bucket);
 
 uint32_t fnv1a_hash(const char* key) {
     uint32_t hash = get_offset_base();
@@ -77,7 +79,7 @@ bool hashmap_contains_value(hashmap* map, const void* value) {
 
 bool hashmap_contains_value_comp(hashmap* map, int (*comparator)(const void*, const void*),
         const void* value) {
-    if(map == (hashmap*)0 || comparator == 0 ) {
+    if(map == (hashmap*)0 || comparator == 0 || value == (const void*)0 ) {
         return false;
     }
 
@@ -86,8 +88,10 @@ bool hashmap_contains_value_comp(hashmap* map, int (*comparator)(const void*, co
         hashmap_bucket* bucket = slot->bucket;
 
         while(bucket) {
-            if( (*comparator)(bucket->value, value) == 0) {
-                return true;
+            if(bucket->value) { // only compare non-NULL values
+                if( (*comparator)(bucket->value, value) == 0) {
+                    return true;
+                }
             }
             bucket = bucket->next;
         }
@@ -96,7 +100,7 @@ bool hashmap_contains_value_comp(hashmap* map, int (*comparator)(const void*, co
     return false;
 }
 
-void* hashmap_get(hashmap* map, const char* key) {
+const void* hashmap_get(hashmap* map, const char* key) {
     if(map == (hashmap*)0 || key == (const char*)0) {
         return (void*)0;
     }
@@ -107,13 +111,13 @@ void* hashmap_get(hashmap* map, const char* key) {
     if(slot != (hashmap_slot*)0) {
         hashmap_bucket* bucket = slot->bucket;
         while(bucket) {
-            if(strcmp(bucket->key, key) == 0) {
-                return (void*)bucket->value;
+            if(strcmp_safe(bucket->key, key) == 0) {
+                return (const void*)bucket->value;
             }
             bucket = bucket->next;
         }
     }
-    return (void*)0;
+    return (const void*)0;
 }
 
 void hashmap_put(hashmap** map, const char* key, const void* value) {
@@ -128,8 +132,37 @@ void hashmap_put(hashmap** map, const char* key, const void* value) {
     }
 
     uint32_t hash = fnv1a_hash(key);
-    hashmap_slot* slot = hashmap_retrieve_slot(*map, hash % (*map)->size);
+    uint32_t divisor = (*map)->size == 0 ? hash : (*map)->size;
+    hashmap_slot* slot = hashmap_retrieve_slot(*map, hash % divisor);
     hashmap_do_insert(*map, slot, key, value);
+}
+
+const void* hashmap_remove(hashmap* map, const char* key) {
+    if(key == NULL) {
+        return NULL;
+    }
+
+    uint32_t hash = fnv1a_hash(key);
+    hashmap_slot* slot = hashmap_retrieve_slot(map, hash % map->slot_count);
+
+    if(slot) {
+        hashmap_bucket* bucket = slot->bucket;
+
+        while(bucket) {
+            if(strcmp_safe(bucket->key, key) == 0) {
+                // XXX This causes fragmentation and slows down performance
+                // over time. Have to fix this some time.
+                const void* value = bucket->value;
+                bucket->key = (const char*)NULL;
+                bucket->value = NULL;
+                map->size -= 1;
+                return value;
+            }
+
+            bucket = bucket->next;
+        }
+    }
+    return NULL;
 }
 
 /***********************************
@@ -150,8 +183,9 @@ static void hashmap_do_insert(hashmap* map, hashmap_slot* slot, const char* key
         map->bucket_count += 1;
     }
 
-    bucket->next->key = key;
-    bucket->next->value = value;
+    bucket->key = key;
+    bucket->value = value;
+    map->size += 1;
 }
 
 static void hashmap_grow(hashmap** map, uint32_t new_capacity) {
@@ -185,7 +219,7 @@ static void hashmap_grow(hashmap** map, uint32_t new_capacity) {
 static hashmap_slot* hashmap_retrieve_slot(hashmap* map, uint32_t index) {
     hashmap_slot* slot = map->slot;
 
-    for(uint32_t i = 0; i < (index - 1); i++) {
+    for(uint32_t i = 0; i < index; i++) {
         if(slot == (hashmap_slot*)0) {
             break; // none found
         }
@@ -235,7 +269,15 @@ static void hashmap_buckets_destroy(hashmap_bucket* bucket) {
 
     while(bucket) {
         hashmap_bucket* next = bucket->next;
-        free(bucket);
+        hashmap_bucket_destroy(bucket);
         bucket = next;
     }
+}
+
+static void hashmap_bucket_destroy(hashmap_bucket* bucket) {
+    if(bucket == NULL) {
+        return;
+    }
+
+    free(bucket);
 }

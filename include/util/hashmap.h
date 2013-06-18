@@ -35,12 +35,10 @@ bool hashmap_contains_value(hashmap* map, const void* value);
 bool hashmap_contains_value_comp(hashmap* map, int (*comparator)(const void*, const void*)
         , const void* value);
 
-void* hashmap_get(hashmap* map, const char* key);
+const void* hashmap_get(hashmap* map, const char* key);
 
 void hashmap_put(hashmap** map, const char* key, const void* value);
 
-/*
-void* hashmap_remove(hashmap* map, const char* key);
-*/
+const void* hashmap_remove(hashmap* map, const char* key);
 
 #endif

@@ -6,7 +6,8 @@ testenv.Append(LIBS = ['check'])
 testenv.Append(LIBPATH = '/usr/local/lib/')
 
 test_sources = Split("""
-../datastructures/hashmap.c
+../util/stringutil.c
+../util/hashmap.c
 main.c
 """)
 
