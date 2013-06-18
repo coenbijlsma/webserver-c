@@ -3,9 +3,9 @@
 #include "util/stringutil.h"
 
 int strcmp_safe(const char* s1, const char* s2) {
-    if(s1 == NULL && s2 != NULL) {
+    if(!s1 && s2) {
         return -1;
-    } else if(s1 != NULL && s2 == NULL) {
+    } else if(s1 && !s2) {
         return 1;
     } else {
         return strcmp(s1, s2);

@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
-#include <stddef.h> // true, false
+#include <stddef.h> // true, false, NULL
 #include <string.h> // memset, string fnc
 #include <limits.h>
 
@@ -45,7 +45,7 @@ hashmap* hashmap_create(void) {
 }
 
 void hashmap_destroy(hashmap* map) {
-    if(map == (hashmap*)0) {
+    if(!map) {
         return;
     }
 
@@ -54,11 +54,11 @@ void hashmap_destroy(hashmap* map) {
 }
 
 bool hashmap_contains_key(hashmap* map, const char* key) {
-    return hashmap_get(map, key) != (void*)0;
+    return hashmap_get(map, key) != NULL;
 }
 
 bool hashmap_contains_value(hashmap* map, const void* value) {
-    if(map == (hashmap*)0) {
+    if(!map) {
         return false;
     }
 
@@ -79,7 +79,7 @@ bool hashmap_contains_value(hashmap* map, const void* value) {
 
 bool hashmap_contains_value_comp(hashmap* map, int (*comparator)(const void*, const void*),
         const void* value) {
-    if(map == (hashmap*)0 || comparator == 0 || value == (const void*)0 ) {
+    if(!map || !comparator || !value ) {
         return false;
     }
 
@@ -101,14 +101,14 @@ bool hashmap_contains_value_comp(hashmap* map, int (*comparator)(const void*, co
 }
 
 const void* hashmap_get(hashmap* map, const char* key) {
-    if(map == (hashmap*)0 || key == (const char*)0) {
-        return (void*)0;
+    if(!map || !key) {
+        return NULL;
     }
     
     uint32_t hash = fnv1a_hash(key);
     hashmap_slot* slot = hashmap_retrieve_slot(map, hash % map->size);
 
-    if(slot != (hashmap_slot*)0) {
+    if(slot) {
         hashmap_bucket* bucket = slot->bucket;
         while(bucket) {
             if(strcmp_safe(bucket->key, key) == 0) {
@@ -117,7 +117,7 @@ const void* hashmap_get(hashmap* map, const char* key) {
             bucket = bucket->next;
         }
     }
-    return (const void*)0;
+    return NULL;
 }
 
 void hashmap_put(hashmap** map, const char* key, const void* value) {
@@ -138,7 +138,7 @@ void hashmap_put(hashmap** map, const char* key, const void* value) {
 }
 
 const void* hashmap_remove(hashmap* map, const char* key) {
-    if(key == NULL) {
+    if(!key) {
         return NULL;
     }
 
@@ -153,7 +153,7 @@ const void* hashmap_remove(hashmap* map, const char* key) {
                 // XXX This causes fragmentation and slows down performance
                 // over time. Have to fix this some time.
                 const void* value = bucket->value;
-                bucket->key = (const char*)NULL;
+                bucket->key = NULL;
                 bucket->value = NULL;
                 map->size -= 1;
                 return value;
@@ -173,11 +173,11 @@ static void hashmap_do_insert(hashmap* map, hashmap_slot* slot, const char* key
         , const void* value) {
     hashmap_bucket* bucket = slot->bucket;
 
-    while(bucket->value != (const void*)0 && bucket->next != (hashmap_bucket*)0) {
+    while(bucket->value && bucket->next) {
         bucket = bucket->next;
     }
 
-    if(bucket->next == (hashmap_bucket*)0) {
+    if(!bucket->next) {
         bucket->next = hashmap_bucket_create();
         bucket = bucket->next;
         map->bucket_count += 1;
@@ -220,7 +220,7 @@ static hashmap_slot* hashmap_retrieve_slot(hashmap* map, uint32_t index) {
     hashmap_slot* slot = map->slot;
 
     for(uint32_t i = 0; i < index; i++) {
-        if(slot == (hashmap_slot*)0) {
+        if(!slot) {
             break; // none found
         }
         slot = slot->next;
@@ -250,7 +250,7 @@ static hashmap_bucket* hashmap_bucket_create(void) {
 }
 
 static void hashmap_slots_destroy(hashmap_slot* slot) {
-    if(slot == (hashmap_slot*)0) {
+    if(!slot) {
         return;
     }
 
@@ -263,7 +263,7 @@ static void hashmap_slots_destroy(hashmap_slot* slot) {
 }
 
 static void hashmap_buckets_destroy(hashmap_bucket* bucket) {
-    if(bucket == (hashmap_bucket*)0) {
+    if(!bucket) {
         return;
     }
 
@@ -275,7 +275,7 @@ static void hashmap_buckets_destroy(hashmap_bucket* bucket) {
 }
 
 static void hashmap_bucket_destroy(hashmap_bucket* bucket) {
-    if(bucket == NULL) {
+    if(!bucket) {
         return;
     }
 

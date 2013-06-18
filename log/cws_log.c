@@ -3,7 +3,7 @@
 
 void cws_log(LOG_LEVEL level, const char* message) {
 
-    openlog("testapp", LOG_PID | LOG_CONS, LOG_USER);
+    openlog("cws", LOG_PID | LOG_CONS, LOG_USER);
 
     switch(level) {
         case DEBUG:
